@@ -22,9 +22,9 @@ import java.util.Date;
  * @date 2024-01-10
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 @TableName("person_innovation")
-public class PersonInnovation extends BaseEntity {
+public class PersonInnovation {
 
     private static final long serialVersionUID = 1L;
 
@@ -111,6 +111,26 @@ public class PersonInnovation extends BaseEntity {
      * 附件URL
      */
     private String attachmentUrl;
+    
+    /**
+     * 创建者
+     */
+    private String createBy;
+
+    /**
+     * 创建时间
+     */
+    private java.util.Date createTime;
+
+    /**
+     * 更新者
+     */
+    private String updateBy;
+
+    /**
+     * 更新时间
+     */
+    private java.util.Date updateTime;
 
     // ========== 非数据库字段 ==========
 
