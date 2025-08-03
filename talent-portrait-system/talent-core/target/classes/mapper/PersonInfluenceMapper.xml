@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cgn.talent.core.mapper.PersonInfluenceMapper">
+
+    <resultMap id="BaseResultMap" type="com.cgn.talent.core.entity.PersonInfluence">
+        <id column="id" property="id"/>
+        <result column="person_id" property="personId"/>
+        <result column="influence_type" property="influenceType"/>
+        <result column="influence_name" property="influenceName"/>
+        <result column="organization" property="organization"/>
+        <result column="position_level" property="positionLevel"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="is_current" property="isCurrent"/>
+        <result column="influence_scope" property="influenceScope"/>
+        <result column="description" property="description"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- 根据人员ID查询影响力信息 -->
+    <select id="selectInfluenceByPersonId" resultMap="BaseResultMap">
+        SELECT
+        pi.*,
+        d1.dict_label as influence_type_name,
+        d2.dict_label as influence_scope_name,
+        TIMESTAMPDIFF(MONTH, pi.start_date, IFNULL(pi.end_date, NOW())) as tenure_months
+        FROM person_influence pi
+        LEFT JOIN sys_dict_data d1 ON pi.influence_type = d1.dict_value AND d1.dict_type = 'influence_type'
+        LEFT JOIN sys_dict_data d2 ON pi.influence_scope = d2.dict_value AND d2.dict_type = 'influence_scope'
+        WHERE pi.person_id = #{personId}
+        ORDER BY pi.is_current DESC, pi.start_date DESC
+    </select>
+
+    <!-- 查询当前在任的影响力信息 -->
+    <select id="selectCurrentInfluence" resultMap="BaseResultMap">
+        SELECT * FROM person_influence
+        WHERE person_id = #{personId} AND is_current = '1'
+        ORDER BY influence_scope, start_date DESC
+    </select>
+
+    <!-- 统计团队影响力分布 -->
+    <select id="selectTeamInfluenceDistribution" resultType="map">
+        SELECT
+        pi.influence_type,
+        d.dict_label as influence_type_name,
+        COUNT(DISTINCT pi.person_id) as person_count,
+        COUNT(*) as total_count
+        FROM person_influence pi
+        INNER JOIN person_info p ON pi.person_id = p.id
+        LEFT JOIN sys_dict_data d ON pi.influence_type = d.dict_value AND d.dict_type = 'influence_type'
+        WHERE p.del_flag = '0' AND p.status = '0' AND pi.is_current = '1'
+        <if test="teamId != null">
+            AND p.team_id = #{teamId}
+        </if>
+        GROUP BY pi.influence_type, d.dict_label
+        ORDER BY person_count DESC
+    </select>
+</mapper>

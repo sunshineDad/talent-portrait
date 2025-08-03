@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cgn.talent.core.mapper.PersonSkillMapper">
+
+    <resultMap id="BaseResultMap" type="com.cgn.talent.core.entity.PersonSkill">
+        <id column="id" property="id"/>
+        <result column="person_id" property="personId"/>
+        <result column="skill_type" property="skillType"/>
+        <result column="skill_name" property="skillName"/>
+        <result column="skill_level" property="skillLevel"/>
+        <result column="experience_years" property="experienceYears"/>
+        <result column="certification" property="certification"/>
+        <result column="description" property="description"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- 根据人员ID查询能力列表 -->
+    <select id="selectSkillByPersonId" resultMap="BaseResultMap">
+        SELECT
+        ps.*,
+        d1.dict_label as skill_type_name,
+        d2.dict_label as skill_level_name
+        FROM person_skill ps
+        LEFT JOIN sys_dict_data d1 ON ps.skill_type = d1.dict_value AND d1.dict_type = 'skill_type'
+        LEFT JOIN sys_dict_data d2 ON ps.skill_level = d2.dict_value AND d2.dict_type = 'skill_level'
+        WHERE ps.person_id = #{personId}
+        ORDER BY ps.skill_type, ps.create_time
+    </select>
+
+    <!-- 批量插入人员能力 -->
+    <insert id="batchInsertSkill">
+        INSERT INTO person_skill (
+        person_id, skill_type, skill_name, skill_level,
+        experience_years, certification, description,
+        create_by, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.personId}, #{item.skillType}, #{item.skillName}, #{item.skillLevel},
+            #{item.experienceYears}, #{item.certification}, #{item.description},
+            #{item.createBy}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 删除人员的所有能力 -->
+    <delete id="deleteSkillByPersonId">
+        DELETE FROM person_skill WHERE person_id = #{personId}
+    </delete>
+
+    <!-- 统计团队能力分布 -->
+    <select id="selectTeamSkillDistribution" resultType="map">
+        SELECT
+        ps.skill_type,
+        d.dict_label as skill_type_name,
+        COUNT(DISTINCT ps.person_id) as person_count,
+        AVG(ps.experience_years) as avg_experience_years
+        FROM person_skill ps
+        INNER JOIN person_info p ON ps.person_id = p.id
+        LEFT JOIN sys_dict_data d ON ps.skill_type = d.dict_value AND d.dict_type = 'skill_type'
+        WHERE p.del_flag = '0' AND p.status = '0'
+        <if test="teamId != null">
+            AND p.team_id IN (
+            SELECT id FROM team_info
+            WHERE id = #{teamId} OR ancestors LIKE CONCAT('%,', #{teamId}, ',%')
+            )
+        </if>
+        GROUP BY ps.skill_type, d.dict_label
+        ORDER BY person_count DESC
+    </select>
+
+    <!-- 查询能力等级分布 -->
+    <select id="selectSkillLevelDistribution" resultType="map">
+        SELECT
+        ps.skill_level,
+        d.dict_label as skill_level_name,
+        COUNT(*) as count
+        FROM person_skill ps
+        INNER JOIN person_info p ON ps.person_id = p.id
+        LEFT JOIN sys_dict_data d ON ps.skill_level = d.dict_value AND d.dict_type = 'skill_level'
+        WHERE p.del_flag = '0' AND p.status = '0'
+        <if test="teamId != null">
+            AND p.team_id = #{teamId}
+        </if>
+        <if test="skillType != null and skillType != ''">
+            AND ps.skill_type = #{skillType}
+        </if>
+        GROUP BY ps.skill_level, d.dict_label
+        ORDER BY ps.skill_level
+    </select>
+</mapper>

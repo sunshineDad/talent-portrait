@@ -1,0 +1,43 @@
+# 开发环境配置
+spring:
+  datasource:
+    druid:
+      url: jdbc:mysql://localhost:3306/talent_portrait?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+      username: root
+      password: 123456
+
+  redis:
+    host: ${REDIS_URL:172.16.10.108}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:HiKnow_1qaz@WSX}
+    database: 1
+    # 连接超时时间（毫秒）
+    timeout: 10000
+    # redis 集群
+    #    cluster:
+    #      nodes:
+    #      password:
+    jedis:
+      pool:
+        # 连接池中的最大空闲连接
+        max-idle: 8
+        # 连接池中的最小空闲连接
+        min-idle: 10
+        # 连接池最大连接数（使用负值表示没有限制）
+        max-active: 100
+        # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-wait: -1
+
+# MinIO配置
+minio:
+  endpoint: http://172.16.10.108:9000
+  bucketName: hi-knowledge
+  tempBucketName: hi-knowledge-temp
+  accessKey: hi_know_admin
+  secretKey: hi_know_1qaz@WSX
+  assessAddress: http://oss.hi.dhc.com.cn
+
+# 开发环境日志
+logging:
+  level:
+    com.cgn.talent: debug

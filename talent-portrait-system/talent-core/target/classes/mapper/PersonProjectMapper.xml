@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cgn.talent.core.mapper.PersonProjectMapper">
+
+    <resultMap id="BaseResultMap" type="com.cgn.talent.core.entity.PersonProject">
+        <id column="id" property="id"/>
+        <result column="person_id" property="personId"/>
+        <result column="project_name" property="projectName"/>
+        <result column="project_code" property="projectCode"/>
+        <result column="project_type" property="projectType"/>
+        <result column="project_level" property="projectLevel"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="project_role" property="projectRole"/>
+        <result column="project_status" property="projectStatus"/>
+        <result column="achievement" property="achievement"/>
+        <result column="technology_stack" property="technologyStack"/>
+        <result column="team_size" property="teamSize"/>
+        <result column="project_budget" property="projectBudget"/>
+        <result column="description" property="description"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- 根据人员ID查询项目经历 -->
+    <select id="selectProjectByPersonId" resultMap="BaseResultMap">
+        SELECT
+        pp.*,
+        d1.dict_label as project_type_name,
+        d2.dict_label as project_level_name,
+        d3.dict_label as project_role_name,
+        d4.dict_label as project_status_name,
+        TIMESTAMPDIFF(MONTH, pp.start_date, IFNULL(pp.end_date, NOW())) as project_duration
+        FROM person_project pp
+        LEFT JOIN sys_dict_data d1 ON pp.project_type = d1.dict_value AND d1.dict_type = 'project_type'
+        LEFT JOIN sys_dict_data d2 ON pp.project_level = d2.dict_value AND d2.dict_type = 'project_level'
+        LEFT JOIN sys_dict_data d3 ON pp.project_role = d3.dict_value AND d3.dict_type = 'project_role'
+        LEFT JOIN sys_dict_data d4 ON pp.project_status = d4.dict_value AND d4.dict_type = 'project_status'
+        WHERE pp.person_id = #{personId}
+        ORDER BY pp.start_date DESC
+    </select>
+
+    <!-- 批量插入项目经历 -->
+    <insert id="batchInsertProject">
+        INSERT INTO person_project (
+        person_id, project_name, project_code, project_type, project_level,
+        start_date, end_date, project_role, project_status, achievement,
+        technology_stack, team_size, project_budget, description,
+        create_by, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.personId}, #{item.projectName}, #{item.projectCode}, #{item.projectType}, #{item.projectLevel},
+            #{item.startDate}, #{item.endDate}, #{item.projectRole}, #{item.projectStatus}, #{item.achievement},
+            #{item.technologyStack}, #{item.teamSize}, #{item.projectBudget}, #{item.description},
+            #{item.createBy}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 统计项目类型分布 -->
+    <select id="selectProjectTypeStatistics" resultType="map">
+        SELECT
+        pp.project_type,
+        d.dict_label as project_type_name,
+        COUNT(*) as project_count,
+        SUM(pp.project_budget) as total_budget
+        FROM person_project pp
+        INNER JOIN person_info p ON pp.person_id = p.id
+        LEFT JOIN sys_dict_data d ON pp.project_type = d.dict_value AND d.dict_type = 'project_type'
+        WHERE p.del_flag = '0' AND p.status = '0'
+        <if test="teamId != null">
+            AND p.team_id = #{teamId}
+        </if>
+        GROUP BY pp.project_type, d.dict_label
+        ORDER BY project_count DESC
+    </select>
+
+    <!-- 查询重要项目列表 -->
+    <select id="selectImportantProjects" resultMap="BaseResultMap">
+        SELECT pp.*, p.person_name
+        FROM person_project pp
+        INNER JOIN person_info p ON pp.person_id = p.id
+        WHERE p.del_flag = '0' AND p.status = '0'
+        AND pp.project_level IN ('national', 'provincial')
+        <if test="teamId != null">
+            AND p.team_id = #{teamId}
+        </if>
+        ORDER BY pp.project_level, pp.start_date DESC
+        LIMIT 20
+    </select>
+</mapper>
