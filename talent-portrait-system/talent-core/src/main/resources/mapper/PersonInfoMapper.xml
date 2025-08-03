@@ -37,7 +37,11 @@
     <!-- 分页查询人员列表 -->
     <select id="selectPersonPage" resultMap="BaseResultMap">
         SELECT
-        p.*,
+        p.id, p.person_code, p.person_name, p.gender, p.birth_date, p.id_card, p.phone, p.email,
+        p.education, p.degree, p.graduate_school, p.major, p.work_start_date, p.join_date,
+        p.job_title, p.job_level, p.position, p.team_id, p.work_location, p.employment_type,
+        p.political_status, p.photo_url, p.status, p.del_flag, p.create_by, p.create_time,
+        p.update_by, p.update_time, p.remark,
         t.team_name,
         TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) as age,
         TIMESTAMPDIFF(YEAR, p.work_start_date, CURDATE()) as work_years,
@@ -72,7 +76,11 @@
     <!-- 查询人员详细信息 -->
     <select id="selectPersonDetailById" resultMap="BaseResultMap">
         SELECT
-        p.*,
+        p.id, p.person_code, p.person_name, p.gender, p.birth_date, p.id_card, p.phone, p.email,
+        p.education, p.degree, p.graduate_school, p.major, p.work_start_date, p.join_date,
+        p.job_title, p.job_level, p.position, p.team_id, p.work_location, p.employment_type,
+        p.political_status, p.photo_url, p.status, p.del_flag, p.create_by, p.create_time,
+        p.update_by, p.update_time, p.remark,
         t.team_name,
         TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) as age,
         TIMESTAMPDIFF(YEAR, p.work_start_date, CURDATE()) as work_years,

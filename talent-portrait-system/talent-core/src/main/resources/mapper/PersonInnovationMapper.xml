@@ -28,7 +28,10 @@
     <!-- 根据人员ID查询创新产出 -->
     <select id="selectInnovationByPersonId" resultMap="BaseResultMap">
         SELECT
-        pi.*,
+        pi.id, pi.person_id, pi.innovation_type, pi.innovation_name, pi.innovation_level,
+        pi.complete_date, pi.patent_no, pi.authors, pi.author_order, pi.publication,
+        pi.innovation_status, pi.economic_benefit, pi.social_benefit, pi.description,
+        pi.attachment_url, pi.create_by, pi.create_time, pi.update_by, pi.update_time,
         d1.dict_label as innovation_type_name,
         d2.dict_label as innovation_level_name,
         d3.dict_label as innovation_status_name,

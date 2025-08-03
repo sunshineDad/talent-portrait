@@ -20,9 +20,9 @@ import java.math.BigDecimal;
  * @date 2024-01-10
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 @TableName("person_skill")
-public class PersonSkill extends BaseEntity {
+public class PersonSkill {
 
     private static final long serialVersionUID = 1L;
 
@@ -71,6 +71,26 @@ public class PersonSkill extends BaseEntity {
      * 能力描述
      */
     private String description;
+    
+    /**
+     * 创建者
+     */
+    private String createBy;
+
+    /**
+     * 创建时间
+     */
+    private java.util.Date createTime;
+
+    /**
+     * 更新者
+     */
+    private String updateBy;
+
+    /**
+     * 更新时间
+     */
+    private java.util.Date updateTime;
 
     // ========== 非数据库字段 ==========
 

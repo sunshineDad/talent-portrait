@@ -25,7 +25,10 @@
     <!-- 根据人员ID查询评估记录 -->
     <select id="selectEvaluationByPersonId" resultMap="BaseResultMap">
         SELECT
-        pe.*,
+        pe.id, pe.person_id, pe.evaluation_year, pe.evaluation_dimension, pe.dimension_score,
+        pe.dimension_level, pe.evaluation_content, pe.strengths, pe.weaknesses,
+        pe.development_suggestions, pe.evaluator, pe.evaluation_date,
+        pe.create_by, pe.create_time, pe.update_by, pe.update_time,
         d.dict_label as evaluation_dimension_name,
         (pe.dimension_score / 100) * 100 as score_percentage
         FROM person_evaluation pe

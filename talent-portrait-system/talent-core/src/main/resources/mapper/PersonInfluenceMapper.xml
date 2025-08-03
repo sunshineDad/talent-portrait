@@ -24,7 +24,9 @@
     <!-- 根据人员ID查询影响力信息 -->
     <select id="selectInfluenceByPersonId" resultMap="BaseResultMap">
         SELECT
-        pi.*,
+        pi.id, pi.person_id, pi.influence_type, pi.influence_name, pi.organization,
+        pi.position_level, pi.start_date, pi.end_date, pi.is_current, pi.influence_scope,
+        pi.description, pi.create_by, pi.create_time, pi.update_by, pi.update_time,
         d1.dict_label as influence_type_name,
         d2.dict_label as influence_scope_name,
         TIMESTAMPDIFF(MONTH, pi.start_date, IFNULL(pi.end_date, NOW())) as tenure_months
@@ -37,7 +39,11 @@
 
     <!-- 查询当前在任的影响力信息 -->
     <select id="selectCurrentInfluence" resultMap="BaseResultMap">
-        SELECT * FROM person_influence
+        SELECT 
+        id, person_id, influence_type, influence_name, organization,
+        position_level, start_date, end_date, is_current, influence_scope,
+        description, create_by, create_time, update_by, update_time
+        FROM person_influence
         WHERE person_id = #{personId} AND is_current = '1'
         ORDER BY influence_scope, start_date DESC
     </select>
