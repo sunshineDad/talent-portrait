@@ -436,10 +436,16 @@
 }
 
 .talent-info {
-  display: none;
-
-  &.active {
-    display: block;
+  .info-item {
+    margin-bottom: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    
+    .info-value {
+      color: #00d4ff;
+      font-size: 14px;
+      line-height: 1.5;
+    }
   }
 }
 
