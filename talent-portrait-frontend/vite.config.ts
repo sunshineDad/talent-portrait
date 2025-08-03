@@ -12,10 +12,15 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 12000,
+    cors: true,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8088',
         changeOrigin: true,
+        secure: false,
       },
     },
   },
