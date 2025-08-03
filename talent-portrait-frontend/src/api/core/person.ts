@@ -62,7 +62,7 @@ export function exportPerson(query: any) {
 // 下载导入模板
 export function downloadTemplate() {
   return request({
-    url: '/core/person/template',
+    url: '/core/person/importTemplate',
     method: 'get',
     responseType: 'blob',
   })
@@ -71,7 +71,7 @@ export function downloadTemplate() {
 // 导入人员Excel
 export function importPerson(formData: FormData) {
   return request({
-    url: '/core/person/import',
+    url: '/core/person/importData',
     method: 'post',
     data: formData,
     headers: {

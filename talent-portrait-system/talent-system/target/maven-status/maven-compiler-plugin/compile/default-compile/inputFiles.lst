@@ -1,0 +1,14 @@
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/controller/SysDictController.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/service/impl/SysDictTypeServiceImpl.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/mapper/SysDictDataMapper.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/entity/SysDictData.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/service/ISysDictTypeService.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/service/ITeamInfoService.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/mapper/TeamInfoMapper.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/entity/TeamInfo.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/entity/SysDictType.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/mapper/SysDictTypeMapper.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/controller/TeamInfoController.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/service/impl/TeamInfoServiceImpl.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/service/impl/SysDictDataServiceImpl.java
+/workspace/project/talent-portrait/talent-portrait-system/talent-system/src/main/java/com/cgn/talent/system/service/ISysDictDataService.java

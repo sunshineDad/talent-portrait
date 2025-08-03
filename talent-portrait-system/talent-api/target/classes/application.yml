@@ -58,6 +58,7 @@ spring:
 # 服务器配置
 server:
   port: 8088
+  address: 0.0.0.0
   servlet:
     context-path: /api
   tomcat:
