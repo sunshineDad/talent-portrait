@@ -28,7 +28,10 @@
     <!-- 根据人员ID查询项目经历 -->
     <select id="selectProjectByPersonId" resultMap="BaseResultMap">
         SELECT
-        pp.*,
+        pp.id, pp.person_id, pp.project_name, pp.project_code, pp.project_type,
+        pp.project_level, pp.start_date, pp.end_date, pp.project_role, pp.project_status,
+        pp.achievement, pp.technology_stack, pp.team_size, pp.project_budget, pp.description,
+        pp.create_by, pp.create_time, pp.update_by, pp.update_time, pp.remark,
         d1.dict_label as project_type_name,
         d2.dict_label as project_level_name,
         d3.dict_label as project_role_name,

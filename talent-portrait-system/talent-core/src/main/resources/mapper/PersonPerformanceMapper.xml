@@ -26,7 +26,10 @@
     <!-- 根据人员ID查询绩效历史 -->
     <select id="selectPerformanceByPersonId" resultMap="BaseResultMap">
         SELECT
-        pp.*,
+        pp.id, pp.person_id, pp.year, pp.quarter, pp.performance_score,
+        pp.performance_level, pp.kpi_completion, pp.work_quality, pp.work_attitude,
+        pp.team_contribution, pp.improvement_suggestions, pp.evaluator, pp.evaluation_date,
+        pp.create_by, pp.create_time, pp.update_by, pp.update_time, pp.remark,
         d.dict_label as performance_level_name,
         CONCAT(pp.year, '年', IFNULL(CONCAT('第', pp.quarter, '季度'), '')) as period_desc
         FROM person_performance pp

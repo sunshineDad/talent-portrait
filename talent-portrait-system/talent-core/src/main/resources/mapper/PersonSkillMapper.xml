@@ -21,7 +21,9 @@
     <!-- 根据人员ID查询能力列表 -->
     <select id="selectSkillByPersonId" resultMap="BaseResultMap">
         SELECT
-        ps.*,
+        ps.id, ps.person_id, ps.skill_type, ps.skill_name, ps.skill_level, 
+        ps.experience_years, ps.certification, ps.description, 
+        ps.create_by, ps.create_time, ps.update_by, ps.update_time,
         d1.dict_label as skill_type_name,
         d2.dict_label as skill_level_name
         FROM person_skill ps
