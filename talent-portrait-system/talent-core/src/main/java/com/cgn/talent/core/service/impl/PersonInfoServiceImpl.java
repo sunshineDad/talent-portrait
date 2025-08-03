@@ -698,4 +698,14 @@ public class PersonInfoServiceImpl extends ServiceImpl<PersonInfoMapper, PersonI
 
         return contribution;
     }
+    
+    @Override
+    public List<PersonInfo> selectPersonsByTeamId(Long teamId) {
+        return personInfoMapper.selectList(
+                new LambdaQueryWrapper<PersonInfo>()
+                        .eq(PersonInfo::getTeamId, teamId)
+                        .eq(PersonInfo::getDelFlag, "0")
+                        .orderByAsc(PersonInfo::getPersonCode)
+        );
+    }
 }
