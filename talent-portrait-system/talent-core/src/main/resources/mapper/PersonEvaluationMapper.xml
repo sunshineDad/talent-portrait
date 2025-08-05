@@ -4,17 +4,15 @@
 
     <resultMap id="BaseResultMap" type="com.cgn.talent.core.entity.PersonEvaluation">
         <id column="id" property="id"/>
-        <result column="person_id" property="personId"/>
+        <result column="person_code" property="personCode"/>
         <result column="evaluation_year" property="evaluationYear"/>
-        <result column="evaluation_dimension" property="evaluationDimension"/>
-        <result column="dimension_score" property="dimensionScore"/>
         <result column="dimension_level" property="dimensionLevel"/>
-        <result column="evaluation_content" property="evaluationContent"/>
-        <result column="strengths" property="strengths"/>
-        <result column="weaknesses" property="weaknesses"/>
-        <result column="development_suggestions" property="developmentSuggestions"/>
-        <result column="evaluator" property="evaluator"/>
-        <result column="evaluation_date" property="evaluationDate"/>
+        <result column="dimension_code" property="dimensionCode"/>
+        <result column="dimension_name" property="dimensionName"/>
+        <result column="parent_dimension_code" property="parentDimensionCode"/>
+        <result column="standard_value" property="standardValue"/>
+        <result column="benchmark_value" property="benchmarkValue"/>
+        <result column="actual_value" property="actualValue"/>
         <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
         <result column="update_by" property="updateBy"/>
@@ -22,49 +20,147 @@
         <result column="remark" property="remark"/>
     </resultMap>
 
-    <!-- 根据人员ID查询评估记录 -->
-    <select id="selectEvaluationByPersonId" resultMap="BaseResultMap">
+    <!-- 根据人员编号查询评估信息 -->
+    <select id="selectEvaluationByPersonCode" resultMap="BaseResultMap">
         SELECT
-        pe.id, pe.person_id, pe.evaluation_year, pe.evaluation_dimension, pe.dimension_score,
-        pe.dimension_level, pe.evaluation_content, pe.strengths, pe.weaknesses,
-        pe.development_suggestions, pe.evaluator, pe.evaluation_date,
-        pe.create_by, pe.create_time, pe.update_by, pe.update_time,
-        d.dict_label as evaluation_dimension_name,
-        (pe.dimension_score / 100) * 100 as score_percentage
+        pe.*,
+        d.dict_label as dimension_name_dict,
+        CASE
+        WHEN pe.actual_value >= pe.benchmark_value THEN '标杆'
+        WHEN pe.actual_value >= pe.standard_value THEN '达标'
+        ELSE '未达标'
+        END as achievement_level,
+        ROUND(pe.actual_value / pe.benchmark_value * 100, 2) as achievement_rate
         FROM person_evaluation pe
-        LEFT JOIN sys_dict_data d ON pe.evaluation_dimension = d.dict_value AND d.dict_type = 'evaluation_dimension'
-        WHERE pe.person_id = #{personId}
-        ORDER BY pe.evaluation_year DESC, pe.evaluation_dimension
+        LEFT JOIN sys_dict_data d ON pe.dimension_code = d.dict_value
+        AND d.dict_type = CASE
+        WHEN pe.dimension_level = '1' THEN 'evaluation_dimension'
+        ELSE 'evaluation_dimension_sub'
+        END
+        WHERE pe.person_code = #{personCode}
+        ORDER BY pe.evaluation_year DESC, pe.dimension_level, d.sort_order
     </select>
 
-    <!-- 查询人员评估雷达图数据 -->
+    <!-- 批量插入评估信息 -->
+    <insert id="batchInsertEvaluation">
+        INSERT INTO person_evaluation (
+        person_code, evaluation_year, dimension_level, dimension_code,
+        dimension_name, parent_dimension_code, standard_value, benchmark_value,
+        actual_value, create_by, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.personCode}, #{item.evaluationYear}, #{item.dimensionLevel}, #{item.dimensionCode},
+            #{item.dimensionName}, #{item.parentDimensionCode}, #{item.standardValue}, #{item.benchmarkValue},
+            #{item.actualValue}, #{item.createBy}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 删除人员的所有评估信息 -->
+    <delete id="deleteEvaluationByPersonCode">
+        DELETE FROM person_evaluation WHERE person_code = #{personCode}
+    </delete>
+
+    <!-- 查询人员指定年度的评估信息 -->
+    <select id="selectEvaluationByPersonAndYear" resultMap="BaseResultMap">
+        SELECT
+        pe.*,
+        d.dict_label as dimension_name_dict,
+        pd.dict_label as parent_dimension_name
+        FROM person_evaluation pe
+        LEFT JOIN sys_dict_data d ON pe.dimension_code = d.dict_value
+        AND d.dict_type = CASE
+        WHEN pe.dimension_level = '1' THEN 'evaluation_dimension'
+        ELSE 'evaluation_dimension_sub'
+        END
+        LEFT JOIN sys_dict_data pd ON pe.parent_dimension_code = pd.dict_value
+        AND pd.dict_type = 'evaluation_dimension'
+        WHERE pe.person_code = #{personCode} AND pe.evaluation_year = #{year}
+        ORDER BY pe.dimension_level, d.sort_order
+    </select>
+
+    <!-- 查询评估雷达图数据 -->
     <select id="selectEvaluationRadarData" resultType="map">
         SELECT
-        pe.evaluation_dimension,
-        d.dict_label as dimension_name,
-        pe.dimension_score,
-        pe.dimension_level
+        pe.dimension_code,
+        pe.dimension_name,
+        pe.actual_value,
+        pe.standard_value,
+        pe.benchmark_value,
+        ROUND(pe.actual_value / pe.benchmark_value * 100, 2) as achievement_rate,
+        d.dict_label as dimension_label
         FROM person_evaluation pe
-        LEFT JOIN sys_dict_data d ON pe.evaluation_dimension = d.dict_value AND d.dict_type = 'evaluation_dimension'
-        WHERE pe.person_id = #{personId} AND pe.evaluation_year = #{year}
+        LEFT JOIN sys_dict_data d ON pe.dimension_code = d.dict_value
+        AND d.dict_type = 'evaluation_dimension'
+        WHERE pe.person_code = #{personCode}
+        AND pe.evaluation_year = #{year}
+        AND pe.dimension_level = '1'
         ORDER BY d.sort_order
     </select>
 
-    <!-- 统计团队人才评估情况 -->
-    <select id="selectTeamEvaluationStatistics" resultType="map">
+    <!-- 查询团队评估对比数据 -->
+    <select id="selectTeamEvaluationComparison" resultType="map">
         SELECT
-        pe.evaluation_dimension,
-        d.dict_label as dimension_name,
-        AVG(pe.dimension_score) as avg_score,
-        COUNT(DISTINCT pe.person_id) as person_count
+        p.person_code,
+        p.person_name,
+        pe.dimension_code,
+        pe.dimension_name,
+        pe.actual_value,
+        pe.standard_value,
+        pe.benchmark_value,
+        RANK() OVER (PARTITION BY pe.dimension_code ORDER BY pe.actual_value DESC) as dimension_rank
         FROM person_evaluation pe
-        INNER JOIN person_info p ON pe.person_id = p.id
-        LEFT JOIN sys_dict_data d ON pe.evaluation_dimension = d.dict_value AND d.dict_type = 'evaluation_dimension'
-        WHERE p.del_flag = '0' AND p.status = '0' AND pe.evaluation_year = #{year}
-        <if test="teamId != null">
-            AND p.team_id = #{teamId}
+        INNER JOIN person_info p ON pe.person_code = p.person_code
+        WHERE p.del_flag = '0' AND p.status = '0'
+        AND pe.evaluation_year = #{year}
+        <if test="teamCode != null and teamCode != ''">
+            AND p.team_code = #{teamCode}
         </if>
-        GROUP BY pe.evaluation_dimension, d.dict_label
-        ORDER BY d.sort_order
+        <if test="dimensionLevel != null and dimensionLevel != ''">
+            AND pe.dimension_level = #{dimensionLevel}
+        </if>
+        ORDER BY pe.dimension_code, dimension_rank
+    </select>
+
+    <!-- 删除指定年度的评估信息 -->
+    <delete id="deleteEvaluationByPersonAndYear">
+        DELETE FROM person_evaluation
+        WHERE person_code = #{personCode} AND evaluation_year = #{year}
+    </delete>
+
+    <!-- 查询评估维度树形结构 -->
+    <select id="selectEvaluationDimensionTree" resultType="map">
+        WITH dimension_tree AS (
+        SELECT
+        pe1.dimension_code,
+        pe1.dimension_name,
+        pe1.actual_value,
+        pe1.standard_value,
+        pe1.benchmark_value,
+        pe1.dimension_level,
+        pe1.parent_dimension_code,
+        ROUND(pe1.actual_value / pe1.benchmark_value * 100, 2) as achievement_rate
+        FROM person_evaluation pe1
+        WHERE pe1.person_code = #{personCode}
+        AND pe1.evaluation_year = #{year}
+        AND pe1.dimension_level = '1'
+
+        UNION ALL
+
+        SELECT
+        pe2.dimension_code,
+        pe2.dimension_name,
+        pe2.actual_value,
+        pe2.standard_value,
+        pe2.benchmark_value,
+        pe2.dimension_level,
+        pe2.parent_dimension_code,
+        ROUND(pe2.actual_value / pe2.benchmark_value * 100, 2) as achievement_rate
+        FROM person_evaluation pe2
+        WHERE pe2.person_code = #{personCode}
+        AND pe2.evaluation_year = #{year}
+        AND pe2.dimension_level = '2'
+        )
+        SELECT * FROM dimension_tree
+        ORDER BY dimension_level, parent_dimension_code, dimension_code
     </select>
 </mapper>

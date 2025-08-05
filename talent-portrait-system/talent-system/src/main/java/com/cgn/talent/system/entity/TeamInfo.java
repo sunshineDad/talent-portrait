@@ -52,12 +52,6 @@ public class TeamInfo extends BaseEntity {
     private String teamName;
 
     /**
-     * 团队类型（参考字典：team_type）
-     */
-    @NotBlank(message = "团队类型不能为空")
-    private String teamType;
-
-    /**
      * 团队负责人ID
      */
     private Long leaderId;

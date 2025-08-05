@@ -1,23 +1,17 @@
 package com.cgn.talent.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.cgn.talent.common.entity.BaseEntity;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.util.Date;
 import java.util.List;
 
 /**
  * 人员基础信息实体
+ * 对应表：person_info
  *
  * @author CGN
  * @date 2024-01-10
@@ -28,25 +22,18 @@ import java.util.List;
 public class PersonInfo extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
-
-    /**
-     * 人员ID
-     */
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
-
     /**
      * 人员编号
      */
-    @NotBlank(message = "人员编号不能为空")
-    @Size(max = 50, message = "人员编号长度不能超过50个字符")
+    private Long id;
+    /**
+     * 人员编号
+     */
     private String personCode;
 
     /**
      * 姓名
      */
-    @NotBlank(message = "姓名不能为空")
-    @Size(max = 50, message = "姓名长度不能超过50个字符")
     private String personName;
 
     /**
@@ -57,97 +44,105 @@ public class PersonInfo extends BaseEntity {
     /**
      * 出生日期
      */
-    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date birthDate;
+
+    /**
+     * 年龄
+     */
+    private String age;
+
+    /**
+     * 民族
+     */
+    private String nationality;
 
     /**
      * 身份证号
      */
-    @Pattern(regexp = "^[1-9]\\d{5}(18|19|20)\\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\\d{3}[0-9Xx]$",
-            message = "身份证号格式不正确")
     private String idCard;
 
     /**
      * 手机号码
      */
-    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号码格式不正确")
     private String phone;
 
     /**
      * 电子邮箱
      */
-    @Email(message = "邮箱格式不正确")
-    @Size(max = 100, message = "邮箱长度不能超过100个字符")
     private String email;
 
     /**
-     * 最高学历（参考字典：education）
+     * 籍贯
+     */
+    private String nativePlace;
+
+    /**
+     * 最高学历
      */
     private String education;
 
     /**
-     * 最高学位（参考字典：degree）
+     * 最高学位
      */
     private String degree;
 
     /**
      * 毕业院校
      */
-    @Size(max = 100, message = "毕业院校长度不能超过100个字符")
     private String graduateSchool;
 
     /**
      * 所学专业
      */
-    @Size(max = 100, message = "所学专业长度不能超过100个字符")
     private String major;
 
     /**
-     * 参加工作时间
+     * 工作年限
      */
-    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
-    private Date workStartDate;
+    private String workYear;
 
     /**
      * 入职时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date joinDate;
 
     /**
-     * 职称（参考字典：job_title）
+     * 职称
      */
     private String jobTitle;
 
     /**
-     * 职级（参考字典：job_level）
+     * 岗级
      */
     private String jobLevel;
 
     /**
-     * 岗位
+     * 职务
      */
-    @Size(max = 100, message = "岗位长度不能超过100个字符")
     private String position;
 
     /**
-     * 所属团队ID
+     * 团队编码
      */
-    private Long teamId;
+    private String teamCode;
 
     /**
      * 工作地点
      */
-    @Size(max = 100, message = "工作地点长度不能超过100个字符")
     private String workLocation;
 
     /**
-     * 用工类型（参考字典：employment_type）
+     * 人才标签
+     */
+    private String talentTag;
+
+    /**
+     * 人员类别
      */
     private String employmentType;
 
     /**
-     * 政治面貌（参考字典：political_status）
+     * 政治面貌
      */
     private String politicalStatus;
 
@@ -166,7 +161,7 @@ public class PersonInfo extends BaseEntity {
      */
     private String delFlag;
 
-    // ========== 非数据库字段 ==========
+    // ========== 扩展字段 ==========
 
     /**
      * 团队名称
@@ -175,28 +170,24 @@ public class PersonInfo extends BaseEntity {
     private String teamName;
 
     /**
-     * 年龄
+     * 年龄（计算值）
      */
     @TableField(exist = false)
-    private Integer age;
+    private Integer ageValue;
 
     /**
-     * 工龄（年）
+     * 工作年限（计算值）
      */
     @TableField(exist = false)
     private Integer workYears;
 
     /**
-     * 司龄（年）
+     * 司龄（计算值）
      */
     @TableField(exist = false)
     private Integer companyYears;
 
-    /**
-     * 专业能力列表
-     */
-    @TableField(exist = false)
-    private List<PersonSkill> skillList;
+    // ========== 子表数据 ==========
 
     /**
      * 项目经历列表
@@ -227,4 +218,16 @@ public class PersonInfo extends BaseEntity {
      */
     @TableField(exist = false)
     private List<PersonEvaluation> evaluationList;
+
+    /**
+     * 能力达成列表
+     */
+    @TableField(exist = false)
+    private List<PersonCapability> capabilityList;
+
+    /**
+     * 岗级年限列表
+     */
+    @TableField(exist = false)
+    private List<PersonPostGradeDuration> postGradeList;
 }

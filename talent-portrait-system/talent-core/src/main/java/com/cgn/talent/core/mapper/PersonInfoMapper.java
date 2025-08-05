@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cgn.talent.core.entity.PersonInfo;
+import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -32,54 +33,44 @@ public interface PersonInfoMapper extends BaseMapper<PersonInfo> {
     /**
      * 查询人员详细信息（包含所有子表数据）
      *
-     * @param personId 人员ID
+     * @param personCode 人员编号
      * @return 人员信息
      */
-    PersonInfo selectPersonDetailById(@Param("personId") Long personId);
+    PersonInfo selectPersonDetailByCode(@Param("personCode") String personCode);
 
     /**
      * 校验人员编号是否唯一
      *
      * @param personCode 人员编号
-     * @param personId 人员ID（排除自己）
      * @return 结果
      */
-    int checkPersonCodeUnique(@Param("personCode") String personCode,
-                              @Param("personId") Long personId);
+    int checkPersonCodeUnique(@Param("personCode") String personCode);
 
     /**
      * 校验身份证号是否唯一
      *
      * @param idCard 身份证号
-     * @param personId 人员ID（排除自己）
      * @return 结果
      */
-    int checkIdCardUnique(@Param("idCard") String idCard,
-                          @Param("personId") Long personId);
+    int checkIdCardUnique(@Param("idCard") String idCard);
 
-    /**
-     * 批量更新人员状态
-     *
-     * @param ids 人员ID数组
-     * @param status 状态
-     * @return 结果
-     */
-    int updatePersonStatusByIds(@Param("ids") Long[] ids,
-                                @Param("status") String status);
+
 
     /**
      * 统计人员基础信息
      *
-     * @param teamId 团队ID（可选）
+     * @param teamCode 团队ID（可选）
      * @return 统计结果
      */
-    Map<String, Object> selectPersonStatistics(@Param("teamId") Long teamId);
+    @MapKey("team_code")
+    Map<String, Object> selectPersonStatistics(@Param("teamCode") String teamCode);
 
     /**
      * 查询团队下的所有人员
      *
-     * @param teamId 团队ID
+     * @param teamCode 团队ID
      * @return 人员列表
      */
-    List<PersonInfo> selectPersonByTeamId(@Param("teamId") Long teamId);
+
+    List<PersonInfo> selectPersonByTeamCode(@Param("teamCode") String teamCode);
 }

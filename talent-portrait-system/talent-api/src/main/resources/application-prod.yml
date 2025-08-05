@@ -2,20 +2,20 @@
 spring:
   datasource:
     druid:
-      url: jdbc:mysql://192.168.1.100:3306/talent_portrait?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
-      username: ${DB_USERNAME:talent_user}
-      password: ${DB_PASSWORD:Talent@2024}
+      url: jdbc:mysql://47.99.118.208:3306/talent_portrait?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+      username: ${DB_USERNAME:root}
+      password: ${DB_PASSWORD:mysql20240327}
 
   redis:
-    host: 192.168.1.101
+    host: 47.99.118.208
     port: 6379
-    password: ${REDIS_PASSWORD:Redis@2024}
+    password: ${REDIS_PASSWORD:redis123}
 
 # MinIO配置
 minio:
-  endpoint: http://192.168.1.102:9000
-  accessKey: ${MINIO_ACCESS_KEY:talentminio}
-  secretKey: ${MINIO_SECRET_KEY:Minio@2024}
+  endpoint: http://47.99.118.208:9000
+  accessKey: ${MINIO_ACCESS_KEY:TZsPKdmWLJJbMNQbpG4V}
+  secretKey: ${MINIO_SECRET_KEY:Rcz0p0Ybbm6UVslVx9mmiMACP772iVcRqbjpHxIo}
   bucketName: talent-portrait
 
 # 生产环境日志

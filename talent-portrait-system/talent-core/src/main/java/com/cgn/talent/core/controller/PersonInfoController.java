@@ -47,9 +47,9 @@ public class PersonInfoController {
      * 获取人员详细信息（包含所有子表数据）
      */
     @ApiOperation("获取人员详细信息")
-    @GetMapping("/{personId}")
-    public Result<PersonInfo> getInfo(@PathVariable Long personId) {
-        PersonInfo personInfo = personInfoService.selectPersonDetailById(personId);
+    @GetMapping("/{personCode}")
+    public Result<PersonInfo> getInfo(@PathVariable String personCode) {
+        PersonInfo personInfo = personInfoService.selectPersonDetailByCode(personCode);
         return Result.success(personInfo);
     }
 
@@ -87,10 +87,10 @@ public class PersonInfoController {
      * 删除人员
      */
     @ApiOperation("删除人员")
-    @DeleteMapping("/{personIds}")
-    public Result<Void> remove(@PathVariable Long[] personIds) {
+    @DeleteMapping("/{personCodes}")
+    public Result<Void> remove(@PathVariable String[] personCodes) {
         try {
-            personInfoService.deletePersonByIds(personIds);
+            personInfoService.deletePersonByIds(personCodes);
             return Result.success("删除成功");
         } catch (Exception e) {
             log.error("删除人员失败", e);

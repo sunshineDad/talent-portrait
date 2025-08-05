@@ -4,78 +4,122 @@
 
     <resultMap id="BaseResultMap" type="com.cgn.talent.core.entity.PersonInnovation">
         <id column="id" property="id"/>
-        <result column="person_id" property="personId"/>
+        <result column="person_code" property="personCode"/>
         <result column="innovation_type" property="innovationType"/>
         <result column="innovation_name" property="innovationName"/>
-        <result column="innovation_level" property="innovationLevel"/>
-        <result column="complete_date" property="completeDate"/>
-        <result column="patent_no" property="patentNo"/>
-        <result column="authors" property="authors"/>
-        <result column="author_order" property="authorOrder"/>
-        <result column="publication" property="publication"/>
-        <result column="innovation_status" property="innovationStatus"/>
-        <result column="economic_benefit" property="economicBenefit"/>
-        <result column="social_benefit" property="socialBenefit"/>
-        <result column="description" property="description"/>
-        <result column="attachment_url" property="attachmentUrl"/>
+        <result column="evaluation_score" property="evaluationScore"/>
+        <result column="number" property="number"/>
+        <result column="benchmark_score" property="benchmarkScore"/>
         <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
         <result column="update_by" property="updateBy"/>
         <result column="update_time" property="updateTime"/>
-        <result column="remark" property="remark"/>
     </resultMap>
 
-    <!-- 根据人员ID查询创新产出 -->
-    <select id="selectInnovationByPersonId" resultMap="BaseResultMap">
+    <!-- 根据人员编号查询创新产出 -->
+    <select id="selectInnovationByPersonCode" resultMap="BaseResultMap">
         SELECT
-        pi.id, pi.person_id, pi.innovation_type, pi.innovation_name, pi.innovation_level,
-        pi.complete_date, pi.patent_no, pi.authors, pi.author_order, pi.publication,
-        pi.innovation_status, pi.economic_benefit, pi.social_benefit, pi.description,
-        pi.attachment_url, pi.create_by, pi.create_time, pi.update_by, pi.update_time,
-        d1.dict_label as innovation_type_name,
-        d2.dict_label as innovation_level_name,
-        d3.dict_label as innovation_status_name,
-        YEAR(pi.complete_date) as year
+        pi.*,
+        d.dict_label as innovation_type_name,
+        YEAR(pi.create_time) as innovation_year
         FROM person_innovation pi
-        LEFT JOIN sys_dict_data d1 ON pi.innovation_type = d1.dict_value AND d1.dict_type = 'innovation_type'
-        LEFT JOIN sys_dict_data d2 ON pi.innovation_level = d2.dict_value AND d2.dict_type = 'innovation_level'
-        LEFT JOIN sys_dict_data d3 ON pi.innovation_status = d3.dict_value AND d3.dict_type = 'innovation_status'
-        WHERE pi.person_id = #{personId}
-        ORDER BY pi.complete_date DESC
+        LEFT JOIN sys_dict_data d ON pi.innovation_type = d.dict_value AND d.dict_type = 'innovation_type'
+        WHERE pi.person_code = #{personCode}
+        ORDER BY pi.create_time DESC
     </select>
 
-    <!-- 按年度统计创新产出 -->
-    <select id="selectInnovationByYear" resultType="map">
+    <!-- 批量插入创新产出 -->
+    <insert id="batchInsertInnovation">
+        INSERT INTO person_innovation (
+        person_code, innovation_type, innovation_name, evaluation_score,
+        number, benchmark_score, create_by, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.personCode}, #{item.innovationType}, #{item.innovationName}, #{item.evaluationScore},
+            #{item.number}, #{item.benchmarkScore}, #{item.createBy}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 删除人员的所有创新产出 -->
+    <delete id="deleteInnovationByPersonCode">
+        DELETE FROM person_innovation WHERE person_code = #{personCode}
+    </delete>
+
+    <!-- 按类型统计创新产出 -->
+    <select id="selectInnovationStatisticsByType" resultType="map">
         SELECT
-        YEAR(complete_date) as year,
-        innovation_type,
+        pi.innovation_type,
+        d.dict_label as innovation_type_name,
         COUNT(*) as count,
-        SUM(economic_benefit) as total_benefit
-        FROM person_innovation
-        WHERE person_id = #{personId}
-        GROUP BY YEAR(complete_date), innovation_type
-        ORDER BY year DESC, innovation_type
+        SUM(CAST(pi.number AS SIGNED)) as total_number,
+        SUM(CAST(pi.evaluation_score AS DECIMAL(10,2))) as total_score,
+        AVG(CAST(pi.evaluation_score AS DECIMAL(10,2))) as avg_score
+        FROM person_innovation pi
+        LEFT JOIN sys_dict_data d ON pi.innovation_type = d.dict_value AND d.dict_type = 'innovation_type'
+        WHERE pi.person_code = #{personCode}
+        GROUP BY pi.innovation_type, d.dict_label
+        ORDER BY total_score DESC
     </select>
 
-    <!-- 统计团队创新产出 -->
+    <!-- 查询团队创新产出统计 -->
     <select id="selectTeamInnovationStatistics" resultType="map">
         SELECT
         pi.innovation_type,
         d.dict_label as innovation_type_name,
-        COUNT(*) as total_count,
-        COUNT(DISTINCT pi.person_id) as person_count,
-        SUM(pi.economic_benefit) as total_benefit
+        COUNT(DISTINCT pi.person_code) as person_count,
+        COUNT(*) as innovation_count,
+        SUM(CAST(pi.number AS SIGNED)) as total_number,
+        SUM(CAST(pi.evaluation_score AS DECIMAL(10,2))) as total_score
         FROM person_innovation pi
-        INNER JOIN person_info p ON pi.person_id = p.id
+        INNER JOIN person_info p ON pi.person_code = p.person_code
         LEFT JOIN sys_dict_data d ON pi.innovation_type = d.dict_value AND d.dict_type = 'innovation_type'
         WHERE p.del_flag = '0' AND p.status = '0'
-        <if test="teamId != null">
-            AND p.team_id = #{teamId}
+        <if test="teamCode != null and teamCode != ''">
+            AND p.team_code = #{teamCode}
         </if>
         <if test="year != null">
-            AND YEAR(pi.complete_date) = #{year}
+            AND YEAR(pi.create_time) = #{year}
         </if>
         GROUP BY pi.innovation_type, d.dict_label
-        ORDER BY total_count DESC
+        ORDER BY total_score DESC
+    </select>
+
+    <!-- 查询创新产出排名 -->
+    <select id="selectInnovationRanking" resultType="map">
+        SELECT
+        p.person_code,
+        p.person_name,
+        p.job_title,
+        d1.dict_label as job_title_name,
+        COUNT(*) as innovation_count,
+        SUM(CAST(pi.evaluation_score AS DECIMAL(10,2))) as total_score,
+        GROUP_CONCAT(DISTINCT pi.innovation_type) as innovation_types
+        FROM person_innovation pi
+        INNER JOIN person_info p ON pi.person_code = p.person_code
+        LEFT JOIN sys_dict_data d1 ON p.job_title = d1.dict_value AND d1.dict_type = 'job_title'
+        WHERE p.del_flag = '0' AND p.status = '0'
+        <if test="teamCode != null and teamCode != ''">
+            AND p.team_code = #{teamCode}
+        </if>
+        <if test="innovationType != null and innovationType != ''">
+            AND pi.innovation_type = #{innovationType}
+        </if>
+        GROUP BY p.person_code, p.person_name, p.job_title, d1.dict_label
+        ORDER BY total_score DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 统计个人创新产出得分 -->
+    <select id="selectPersonInnovationScore" resultType="map">
+        SELECT
+        COUNT(*) as total_count,
+        SUM(CAST(evaluation_score AS DECIMAL(10,2))) as total_score,
+        AVG(CAST(evaluation_score AS DECIMAL(10,2))) as avg_score,
+        MAX(CAST(evaluation_score AS DECIMAL(10,2))) as max_score,
+        COUNT(DISTINCT innovation_type) as type_count
+        FROM person_innovation
+        WHERE person_code = #{personCode}
     </select>
 </mapper>

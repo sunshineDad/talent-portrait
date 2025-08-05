@@ -15,12 +15,12 @@
         <result column="degree" property="degree"/>
         <result column="graduate_school" property="graduateSchool"/>
         <result column="major" property="major"/>
-        <result column="work_start_date" property="workStartDate"/>
+        <result column="work_year" property="workYear"/>
         <result column="join_date" property="joinDate"/>
         <result column="job_title" property="jobTitle"/>
         <result column="job_level" property="jobLevel"/>
         <result column="position" property="position"/>
-        <result column="team_id" property="teamId"/>
+        <result column="team_code" property="teamCode"/>
         <result column="work_location" property="workLocation"/>
         <result column="employment_type" property="employmentType"/>
         <result column="political_status" property="politicalStatus"/>
@@ -39,7 +39,7 @@
         SELECT
         p.id, p.person_code, p.person_name, p.gender, p.birth_date, p.id_card, p.phone, p.email,
         p.education, p.degree, p.graduate_school, p.major, p.work_start_date, p.join_date,
-        p.job_title, p.job_level, p.position, p.team_id, p.work_location, p.employment_type,
+        p.job_title, p.job_level, p.position, p.team_code, p.work_location, p.employment_type,
         p.political_status, p.photo_url, p.status, p.del_flag, p.create_by, p.create_time,
         p.update_by, p.update_time, p.remark,
         t.team_name,
@@ -47,7 +47,7 @@
         TIMESTAMPDIFF(YEAR, p.work_start_date, CURDATE()) as work_years,
         TIMESTAMPDIFF(YEAR, p.join_date, CURDATE()) as company_years
         FROM person_info p
-        LEFT JOIN team_info t ON p.team_id = t.id
+        LEFT JOIN team_info t ON p.team_code = t.id
         WHERE p.del_flag = '0'
         <if test="person.personCode != null and person.personCode != ''">
             AND p.person_code LIKE CONCAT('%', #{person.personCode}, '%')
@@ -55,8 +55,8 @@
         <if test="person.personName != null and person.personName != ''">
             AND p.person_name LIKE CONCAT('%', #{person.personName}, '%')
         </if>
-        <if test="person.teamId != null">
-            AND (p.team_id = #{person.teamId} OR t.ancestors LIKE CONCAT('%,', #{person.teamId}, ',%'))
+        <if test="person.teamCode != null">
+            AND (p.team_code = #{person.teamCode} OR t.ancestors LIKE CONCAT('%,', #{person.teamCode}, ',%'))
         </if>
         <if test="person.education != null and person.education != ''">
             AND p.education = #{person.education}
@@ -74,11 +74,11 @@
     </select>
 
     <!-- 查询人员详细信息 -->
-    <select id="selectPersonDetailById" resultMap="BaseResultMap">
+    <select id="selectPersonDetailByCode" resultMap="BaseResultMap">
         SELECT
         p.id, p.person_code, p.person_name, p.gender, p.birth_date, p.id_card, p.phone, p.email,
         p.education, p.degree, p.graduate_school, p.major, p.work_start_date, p.join_date,
-        p.job_title, p.job_level, p.position, p.team_id, p.work_location, p.employment_type,
+        p.job_title, p.job_level, p.position, p.team_code, p.work_location, p.employment_type,
         p.political_status, p.photo_url, p.status, p.del_flag, p.create_by, p.create_time,
         p.update_by, p.update_time, p.remark,
         t.team_name,
@@ -86,8 +86,8 @@
         TIMESTAMPDIFF(YEAR, p.work_start_date, CURDATE()) as work_years,
         TIMESTAMPDIFF(YEAR, p.join_date, CURDATE()) as company_years
         FROM person_info p
-        LEFT JOIN team_info t ON p.team_id = t.id
-        WHERE p.id = #{personId} AND p.del_flag = '0'
+        LEFT JOIN team_info t ON p.team_code = t.id
+        WHERE p.person_code = #{personCode} AND p.del_flag = '0'
     </select>
 
     <!-- 统计人员基础信息 -->
@@ -101,10 +101,10 @@
         AVG(TIMESTAMPDIFF(YEAR, work_start_date, CURDATE())) as avg_work_years
         FROM person_info
         WHERE del_flag = '0'
-        <if test="teamId != null">
-            AND team_id IN (
-            SELECT id FROM team_info
-            WHERE id = #{teamId} OR ancestors LIKE CONCAT('%,', #{teamId}, ',%')
+        <if test="teamCode != null">
+            AND team_code IN (
+            SELECT teamCode FROM team_info
+            WHERE teamCode = #{teamCode} OR ancestors LIKE CONCAT('%,', #{teamCode}, ',%')
             )
         </if>
     </select>
@@ -113,17 +113,15 @@
     <select id="checkPersonCodeUnique" resultType="int">
         SELECT COUNT(1) FROM person_info
         WHERE person_code = #{personCode} AND del_flag = '0'
-        <if test="personId != null">
-            AND id != #{personId}
-        </if>
     </select>
 
     <!-- 校验身份证号唯一性 -->
     <select id="checkIdCardUnique" resultType="int">
         SELECT COUNT(1) FROM person_info
         WHERE id_card = #{idCard} AND del_flag = '0'
-        <if test="personId != null">
-            AND id != #{personId}
-        </if>
+    </select>
+    <select id="selectPersonByTeamCode" resultType="com.cgn.talent.core.entity.PersonInfo">
+        SELECT * FROM person_info
+        WHERE team_code = #{teamCode} AND del_flag = '0'
     </select>
 </mapper>

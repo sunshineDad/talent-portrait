@@ -2,6 +2,7 @@ package com.cgn.talent.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.cgn.talent.core.entity.PersonInfluence;
+import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,44 +19,40 @@ import java.util.Map;
 public interface PersonInfluenceMapper extends BaseMapper<PersonInfluence> {
 
     /**
-     * 根据人员ID查询影响力信息
-     *
-     * @param personId 人员ID
-     * @return 影响力列表
+     * 根据人员编号查询影响力信息
      */
-    List<PersonInfluence> selectInfluenceByPersonId(@Param("personId") Long personId);
+    List<PersonInfluence> selectInfluenceByPersonCode(@Param("personCode") String personCode);
+
+    /**
+     * 批量插入影响力信息
+     */
+    int batchInsertInfluence(List<PersonInfluence> list);
+
+    /**
+     * 删除人员的所有影响力信息
+     */
+    int deleteInfluenceByPersonCode(@Param("personCode") String personCode);
 
     /**
      * 查询当前在任的影响力信息
-     *
-     * @param personId 人员ID
-     * @return 在任影响力列表
      */
-    List<PersonInfluence> selectCurrentInfluence(@Param("personId") Long personId);
-
-    /**
-     * 批量插入影响力记录
-     *
-     * @param influenceList 影响力列表
-     * @return 结果
-     */
-    int batchInsertInfluence(@Param("list") List<PersonInfluence> influenceList);
+    @MapKey("person_code")
+    List<PersonInfluence> selectCurrentInfluenceByPersonCode(@Param("personCode") String personCode);
 
     /**
      * 统计团队影响力分布
-     *
-     * @param teamId 团队ID
-     * @return 影响力分布统计
      */
-    List<Map<String, Object>> selectTeamInfluenceDistribution(@Param("teamId") Long teamId);
+    @MapKey("team_code")
+    List<Map<String, Object>> selectTeamInfluenceStatistics(@Param("teamCode") String teamCode);
 
     /**
-     * 查询高级别影响力人员
-     *
-     * @param teamId 团队ID
-     * @param scope 影响范围（国际级、国家级等）
-     * @return 人员列表
+     * 查询人才计划分布统计
      */
-    List<Map<String, Object>> selectHighLevelInfluencePerson(@Param("teamId") Long teamId,
-                                                             @Param("scope") String scope);
+    @MapKey("team_code")
+    List<Map<String, Object>> selectTalentPlanDistribution(@Param("teamCode") String teamCode);
+
+    /**
+     * 更新影响力在任状态
+     */
+    int updateInfluenceCurrentStatus();
 }

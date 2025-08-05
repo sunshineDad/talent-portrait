@@ -26,18 +26,26 @@ public interface IPersonInfoService extends IService<PersonInfo> {
     PageResult<PersonInfo> selectPersonPage(PageParam pageParam, PersonInfo personInfo);
 
     /**
-     * 查询人员详细信息（包含所有子表数据）
+     * 根据ID查询人员详细信息（包含所有子表数据）
      *
      * @param personId 人员ID
-     * @return 人员详细信息
+     * @return 人员信息
      */
     PersonInfo selectPersonDetailById(Long personId);
+
+    /**
+     * 根据人员编号查询人员详细信息
+     *
+     * @param personCode 人员编号
+     * @return 人员信息
+     */
+    PersonInfo selectPersonDetailByCode(String personCode);
 
     /**
      * 新增人员信息
      *
      * @param personInfo 人员信息
-     * @return 结果
+     * @return 人员ID
      */
     Long insertPerson(PersonInfo personInfo);
 
@@ -45,15 +53,15 @@ public interface IPersonInfoService extends IService<PersonInfo> {
      * 修改人员信息
      *
      * @param personInfo 人员信息
-     * @return 结果
+     * @return 影响行数
      */
     int updatePerson(PersonInfo personInfo);
 
     /**
-     * 批量删除人员
+     * 批量删除人员信息
      *
      * @param personIds 人员ID数组
-     * @return 结果
+     * @return 影响行数
      */
     int deletePersonByIds(Long[] personIds);
 
@@ -75,18 +83,18 @@ public interface IPersonInfoService extends IService<PersonInfo> {
     List<PersonInfo> exportPerson(PersonInfo personInfo);
 
     /**
-     * 统计人员基础信息
+     * 统计人员信息
      *
-     * @param teamId 团队ID（可选）
+     * @param teamCode 团队编码（可选）
      * @return 统计结果
      */
-    Map<String, Object> selectPersonStatistics(Long teamId);
+    Map<String, Object> selectPersonStatistics(String teamCode);
 
     /**
      * 校验人员编号是否唯一
      *
      * @param personInfo 人员信息
-     * @return 结果
+     * @return true-唯一 false-不唯一
      */
     boolean checkPersonCodeUnique(PersonInfo personInfo);
 
@@ -94,23 +102,47 @@ public interface IPersonInfoService extends IService<PersonInfo> {
      * 校验身份证号是否唯一
      *
      * @param personInfo 人员信息
-     * @return 结果
+     * @return true-唯一 false-不唯一
      */
     boolean checkIdCardUnique(PersonInfo personInfo);
 
-    Map<String, Object> getPersonPortrait(Long personId);
+    /**
+     * 根据团队编码查询人员列表
+     *
+     * @param teamCode 团队编码
+     * @return 人员列表
+     */
+    List<PersonInfo> selectPersonByTeamCode(String teamCode);
 
-    Map<String, Object> getTeamPortrait(Long teamId);
+    /**
+     * 批量更新人员团队
+     *
+     * @param personIds 人员ID数组
+     * @param teamCode 团队编码
+     * @return 影响行数
+     */
+    int updatePersonTeam(Long[] personIds, String teamCode);
 
-    Map<String, Object> getPersonDevelopmentPath(Long personId);
+    /**
+     * 计算人员年龄、工龄等信息
+     *
+     * @param personInfo 人员信息
+     */
+    void calculatePersonInfo(PersonInfo personInfo);
 
-    Map<String, Object> getPersonAbilityMatrix(Long personId);
+    /**
+     * 获取人员能力矩阵数据
+     *
+     * @param personCode 人员编号
+     * @return 能力矩阵数据
+     */
+    Map<String, Object> getPersonAbilityMatrix(String personCode);
 
-    Map<String, Object> getTeamAbilityDistribution(Long teamId);
-
-    Map<String, Object> getTeamStructure(Long teamId);
-
-    Map<String, Object> getTeamContribution(Long teamId, Integer year);
-
-    Map<String, Object> compareTeams(Long[] teamIds);
+    /**
+     * 获取人员发展路径数据
+     *
+     * @param personCode 人员编号
+     * @return 发展路径数据
+     */
+    Map<String, Object> getPersonDevelopmentPath(String personCode);
 }

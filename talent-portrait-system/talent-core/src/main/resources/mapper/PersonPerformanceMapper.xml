@@ -4,18 +4,13 @@
 
     <resultMap id="BaseResultMap" type="com.cgn.talent.core.entity.PersonPerformance">
         <id column="id" property="id"/>
-        <result column="person_id" property="personId"/>
+        <result column="person_code" property="personCode"/>
         <result column="year" property="year"/>
-        <result column="quarter" property="quarter"/>
-        <result column="performance_score" property="performanceScore"/>
         <result column="performance_level" property="performanceLevel"/>
-        <result column="kpi_completion" property="kpiCompletion"/>
         <result column="work_quality" property="workQuality"/>
         <result column="work_attitude" property="workAttitude"/>
         <result column="team_contribution" property="teamContribution"/>
         <result column="improvement_suggestions" property="improvementSuggestions"/>
-        <result column="evaluator" property="evaluator"/>
-        <result column="evaluation_date" property="evaluationDate"/>
         <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
         <result column="update_by" property="updateBy"/>
@@ -23,56 +18,227 @@
         <result column="remark" property="remark"/>
     </resultMap>
 
-    <!-- 根据人员ID查询绩效历史 -->
-    <select id="selectPerformanceByPersonId" resultMap="BaseResultMap">
+    <!-- 根据人员编号查询绩效信息 -->
+    <select id="selectPerformanceByPersonCode" resultMap="BaseResultMap">
         SELECT
-        pp.id, pp.person_id, pp.year, pp.quarter, pp.performance_score,
-        pp.performance_level, pp.kpi_completion, pp.work_quality, pp.work_attitude,
-        pp.team_contribution, pp.improvement_suggestions, pp.evaluator, pp.evaluation_date,
-        pp.create_by, pp.create_time, pp.update_by, pp.update_time, pp.remark,
+        pp.*,
         d.dict_label as performance_level_name,
-        CONCAT(pp.year, '年', IFNULL(CONCAT('第', pp.quarter, '季度'), '')) as period_desc
+        d.css_class as level_css_class,
+        CASE
+        WHEN pp.year = YEAR(NOW()) THEN '本年度'
+        WHEN pp.year = YEAR(NOW()) - 1 THEN '上年度'
+        ELSE CONCAT(pp.year, '年')
+        END as year_label
         FROM person_performance pp
         LEFT JOIN sys_dict_data d ON pp.performance_level = d.dict_value AND d.dict_type = 'performance_level'
-        WHERE pp.person_id = #{personId}
-        ORDER BY pp.year DESC, pp.quarter DESC
+        WHERE pp.person_code = #{personCode}
+        ORDER BY pp.year DESC
     </select>
 
-    <!-- 查询绩效趋势数据 -->
-    <select id="selectPerformanceTrend" resultType="map">
+    <!-- 批量插入绩效信息 -->
+    <insert id="batchInsertPerformance">
+        INSERT INTO person_performance (
+        person_code, year, performance_level, work_quality,
+        work_attitude, team_contribution, improvement_suggestions,
+        create_by, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.personCode}, #{item.year}, #{item.performanceLevel}, #{item.workQuality},
+            #{item.workAttitude}, #{item.teamContribution}, #{item.improvementSuggestions},
+            #{item.createBy}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 删除人员的所有绩效信息 -->
+    <delete id="deletePerformanceByPersonCode">
+        DELETE FROM person_performance WHERE person_code = #{personCode}
+    </delete>
+
+    <!-- 查询人员指定年度的绩效信息 -->
+    <select id="selectPerformanceByPersonAndYear" resultMap="BaseResultMap">
         SELECT
-        year,
-        quarter,
-        performance_score,
-        performance_level,
-        kpi_completion
-        FROM person_performance
-        WHERE person_id = #{personId}
-        <if test="startYear != null">
-            AND year >= #{startYear}
-        </if>
-        <if test="endYear != null">
-            AND year &lt;= #{endYear}
-        </if>
-        ORDER BY year, quarter
+        pp.*,
+        d.dict_label as performance_level_name
+        FROM person_performance pp
+        LEFT JOIN sys_dict_data d ON pp.performance_level = d.dict_value AND d.dict_type = 'performance_level'
+        WHERE pp.person_code = #{personCode} AND pp.year = #{year}
     </select>
 
-    <!-- 统计团队绩效分布 -->
-    <select id="selectTeamPerformanceDistribution" resultType="map">
+    <!-- 查询团队绩效统计 -->
+    <select id="selectTeamPerformanceStatistics" resultType="map">
         SELECT
         pp.performance_level,
         d.dict_label as performance_level_name,
-        COUNT(*) as person_count,
-        AVG(pp.performance_score) as avg_score
+        COUNT(DISTINCT pp.person_code) as person_count,
+        ROUND(COUNT(DISTINCT pp.person_code) * 100.0 /
+        (SELECT COUNT(DISTINCT p2.person_code)
+        FROM person_info p2
+        WHERE p2.team_code = p.team_code AND p2.del_flag = '0' AND p2.status = '0'), 2) as percentage
         FROM person_performance pp
-        INNER JOIN person_info p ON pp.person_id = p.id
+        INNER JOIN person_info p ON pp.person_code = p.person_code
         LEFT JOIN sys_dict_data d ON pp.performance_level = d.dict_value AND d.dict_type = 'performance_level'
         WHERE p.del_flag = '0' AND p.status = '0'
-        AND pp.year = #{year}
-        <if test="teamId != null">
-            AND p.team_id = #{teamId}
+        <if test="teamCode != null and teamCode != ''">
+            AND p.team_code = #{teamCode}
         </if>
-        GROUP BY pp.performance_level, d.dict_label
-        ORDER BY pp.performance_level
+        <if test="year != null">
+            AND pp.year = #{year}
+        </if>
+        GROUP BY pp.performance_level, d.dict_label, d.sort_order
+        ORDER BY d.sort_order
     </select>
-</mapper>
+
+    <!-- 查询人员绩效趋势 -->
+    <select id="selectPerformanceTrend" resultType="map">
+        SELECT
+        pp.year,
+        pp.performance_level,
+        d.dict_label as performance_level_name,
+        CASE
+        WHEN pp.performance_level = 'S' THEN 5
+        WHEN pp.performance_level = 'A' THEN 4
+        WHEN pp.performance_level = 'B' THEN 3
+        WHEN pp.performance_level = 'C' THEN 2
+        WHEN pp.performance_level = 'D' THEN 1
+        ELSE 0
+        END as level_score,
+        pp.work_quality,
+        pp.work_attitude,
+        pp.team_contribution
+        FROM person_performance pp
+        LEFT JOIN sys_dict_data d ON pp.performance_level = d.dict_value AND d.dict_type = 'performance_level'
+        WHERE pp.person_code = #{personCode}
+        <if test="startYear != null">
+            AND pp.year &gt;= #{startYear}
+        </if>
+        <if test="endYear != null">
+            AND pp.year &lt;= #{endYear}
+        </if>
+        ORDER BY pp.year
+    </select>
+
+    <!-- 查询团队绩效分布 -->
+    <select id="selectTeamPerformanceDistribution" resultType="map">
+        SELECT
+        p.person_code,
+        p.person_name,
+        p.job_level,
+        d1.dict_label as job_level_name,
+        pp.performance_level,
+        d2.dict_label as performance_level_name,
+        pp.work_quality,
+        pp.work_attitude,
+        pp.team_contribution,
+        CASE
+        WHEN pp.performance_level IN ('S', 'A') THEN '高绩效'
+        WHEN pp.performance_level = 'B' THEN '中绩效'
+        ELSE '待提升'
+        END as performance_group
+        FROM person_performance pp
+        INNER JOIN person_info p ON pp.person_code = p.person_code
+        LEFT JOIN sys_dict_data d1 ON p.job_level = d1.dict_value AND d1.dict_type = 'post_grade'
+        LEFT JOIN sys_dict_data d2 ON pp.performance_level = d2.dict_value AND d2.dict_type = 'performance_level'
+        WHERE p.del_flag = '0' AND p.status = '0' AND p.team_code = #{teamCode} AND pp.year = #{year}
+        ORDER BY
+        CASE pp.performance_level
+        WHEN 'S' THEN 1
+        WHEN 'A' THEN 2
+        WHEN 'B' THEN 3
+        WHEN 'C' THEN 4
+        WHEN 'D' THEN 5
+        END
+    </select>
+
+    <!-- 查询连续优秀人员 -->
+    <select id="selectContinuousExcellentPersons" resultType="map">
+        WITH performance_years AS (
+        SELECT
+        pp.person_code,
+        pp.year,
+        pp.performance_level,
+        ROW_NUMBER() OVER (PARTITION BY pp.person_code ORDER BY pp.year DESC) as rn
+        FROM person_performance pp
+        WHERE pp.performance_level = #{performanceLevel}
+        ),
+        continuous_check AS (
+        SELECT
+        person_code,
+        COUNT(*) as continuous_years
+        FROM performance_years
+        WHERE rn &lt;= #{continuousYears}
+        GROUP BY person_code
+        HAVING COUNT(*) = #{continuousYears}
+        )
+        SELECT
+        p.person_code,
+        p.person_name,
+        p.team_code,
+        t.team_name,
+        p.job_title,
+        d1.dict_label as job_title_name,
+        p.job_level,
+        d2.dict_label as job_level_name,
+        cc.continuous_years
+        FROM continuous_check cc
+        INNER JOIN person_info p ON cc.person_code = p.person_code
+        LEFT JOIN team_info t ON p.team_code = t.team_code
+        LEFT JOIN sys_dict_data d1 ON p.job_title = d1.dict_value AND d1.dict_type = 'job_title'
+        LEFT JOIN sys_dict_data d2 ON p.job_level = d2.dict_value AND d2.dict_type = 'post_grade'
+        WHERE p.del_flag = '0' AND p.status = '0'
+        <if test="teamCode != null and teamCode != ''">
+            AND p.team_code = #{teamCode}
+        </if>
+        ORDER BY p.job_level DESC, p.person_code
+    </select>
+
+    <!-- 批量删除指定年度的绩效信息 -->
+    <delete id="deletePerformanceByPersonAndYears">
+        DELETE FROM person_performance
+        WHERE person_code = #{personCode}
+        <if test="years != null and years.size() > 0">
+            AND year IN
+            <foreach collection="years" item="year" open="(" separator="," close=")">
+                #{year}
+            </foreach>
+        </if>
+    </delete>
+
+    <!-- 查询绩效评价维度统计 -->
+    <select id="selectPerformanceDimensionStatistics" resultType="map">
+        SELECT
+        AVG(CASE work_quality
+        WHEN '优秀' THEN 5
+        WHEN '良好' THEN 4
+        WHEN '合格' THEN 3
+        WHEN '基本合格' THEN 2
+        WHEN '不合格' THEN 1
+        ELSE 0
+        END) as avg_work_quality,
+        AVG(CASE work_attitude
+        WHEN '优秀' THEN 5
+        WHEN '良好' THEN 4
+        WHEN '合格' THEN 3
+        WHEN '基本合格' THEN 2
+        WHEN '不合格' THEN 1
+        ELSE 0
+        END) as avg_work_attitude,
+        AVG(CASE team_contribution
+        WHEN '优秀' THEN 5
+        WHEN '良好' THEN 4
+        WHEN '合格' THEN 3
+        WHEN '基本合格' THEN 2
+        WHEN '不合格' THEN 1
+        ELSE 0
+        END) as avg_team_contribution,
+        COUNT(DISTINCT pp.person_code) as total_persons
+        FROM person_performance pp
+        INNER JOIN person_info p ON pp.person_code = p.person_code
+        WHERE p.del_flag = '0' AND p.status = '0'
+        <if test="teamCode != null and teamCode != ''">
+            AND p.team_code = #{teamCode}
+        </if>
+        <if test="year != null">
+            AND pp.year = #{year}
+        </if>
+    </select>
+</mapper>+
